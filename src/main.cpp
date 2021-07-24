@@ -1,9 +1,12 @@
 #include "main.h"
 #include "Shader.h"
+#include "DDS.h"
 
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <set>
+#include <algorithm>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -13,6 +16,27 @@
 #include<thrust/host_vector.h>
 #include<thrust/device_vector.h>
 #include<thrust/device_ptr.h>
+
+int MaxObject;
+int objectsnum;
+vector<int>OrderedIDs;
+vector<int>RealIDs;
+
+struct OcclusionStruct
+{
+	int object;
+	int count;
+};
+
+class OcclusionGraph {
+public:
+	static vector<vector<OcclusionStruct>>Occludees;
+	static vector<vector<OcclusionStruct>>OccludedBy;
+	static void TraverseOcclusions();
+	static void BuildGraph(DDS* dds);
+	static set<int> GetOccluders(int object);
+};
+
 
 int main()
 {
@@ -50,6 +74,7 @@ int main()
 	vector<pointCoords> Coords;
 	vector<pointColor> Colors;
 	vector<int>ObjectIds;
+	vector<float>Rads;	//constant for now//
 
 	//read data from file//
 	//std::ifstream inputfile("../models/bunny.xyz", std::ios_base::in);
@@ -75,6 +100,8 @@ int main()
 		
 		ObjectIds.push_back(int(o));
 
+		Rads.push_back(0.05);
+
 		if(x<minx)	minx=x;
 		if(y<miny)	miny=y;
 		if(z<minz)	minz=z;
@@ -86,7 +113,49 @@ int main()
 	float midx=(minx+maxx)/2;
 	float midy=(miny+maxy)/2;
 	float midz=(minz+maxz)/2;
-	
+	float ViewWidth=(maxx-minx)*1.5;
+
+	//find number of objects//
+	std::vector<int>::iterator maxobject = std::max_element(ObjectIds.begin(), ObjectIds.end());
+	vector<bool>IsAnObjectID (maxobject[0] + 1, false);
+	for (int i = 0; i < pnum; i++)
+	{
+		IsAnObjectID[ObjectIds[i]] = true;
+	}
+	objectsnum = 0;
+	for (int i = 0; i < IsAnObjectID.size(); i++)
+	{
+		if (IsAnObjectID[i])
+			objectsnum++;
+	}
+	MaxObject = maxobject[0];
+	cout << "max: " << MaxObject << "\n";
+	cout << "number of objects: " << objectsnum << "\n";
+	////
+	OrderedIDs.resize(MaxObject + 1);
+	int index = 0;
+	for (int i = 0; i < IsAnObjectID.size(); i++)
+	{
+		if (IsAnObjectID[i])
+		{
+			OrderedIDs[i] = index;
+			index++;
+		}
+		else
+			OrderedIDs[i] = -1;
+	}
+
+	RealIDs.resize(objectsnum);
+	index = 0;
+	for (int i = 0; i < IsAnObjectID.size(); i++)
+	{
+		if (IsAnObjectID[i])
+		{
+			RealIDs[index] = i;
+			index++;
+		}
+	}
+
 
 	//vao and vbos//
 	GLuint vao;
@@ -105,12 +174,14 @@ int main()
 
 	//matrices//
 	glm::mat4 ModelMat = glm::translate(glm::vec3(0,0,0));
-	glm::mat4 ViewMat = glm::translate(glm::vec3(-midx,-midy,-(minz+2.5*(maxz-midz))));
+	//glm::mat4 ViewMat = glm::translate(glm::vec3(-midx,-midy,-(minz+2.5*(maxz-midz))));
+	glm::mat4 ViewMat = glm::translate(glm::vec3(-midx,-midy,-(minz+3*(maxz-midz))));
 	float fov=70.0;
 	float Near = 0.01;
 	float Far = 7*(maxz-minz);
 	glm::mat4 ProjectionMat =	glm::perspective(fov, float(GlobalW)/float(GlobalH) , Near, Far);
-	glm::mat4 PVMMat = ProjectionMat*ViewMat*ModelMat;
+	glm::mat4 vmMat = ViewMat*ModelMat;
+	glm::mat4 pvmMat = ProjectionMat*ViewMat*ModelMat;
 
 
 	//read shader//
@@ -127,24 +198,16 @@ int main()
 	////////////
 	//DDS//
 	////////////
-	/*cout << "start DDS\n";
+	cout << "start DDS\n";
 	
-	DDS* dds = new DDS(AVG, true, GlobalW, GlobalH, ViewWidth, &coords, &rads, &oid, ProjectionMat, vmMat, pvmMat, pvmMat);
+	DDS* dds = new DDS(AVG, true, GlobalW, GlobalH, ViewWidth, &Coords, &Rads, &ObjectIds, ProjectionMat, vmMat, pvmMat, pvmMat);
 	dds->BuildDDS();
 	cout << "DDS finished\n";
-	auto graphstart = now();
-	OcclusionGraph::BuildGraph(dds);
-	auto graphend = now();
 
-	//OcclusionGraph::TraversOcclusions();
+	OcclusionGraph::BuildGraph(dds);
 
 	dds->FreeMemory(true);
 	
-	dds->OutputTimings(); 
-	
-	cout << "graph constructed in " << graphend - graphstart << "\n";
-
-
 	vector<bool>IsGraphNode(objectsnum, false);
 	int graphNodes = 0;
 	int graphEdges = 0;
@@ -166,8 +229,9 @@ int main()
 	}
 	cout << "nodes: " << graphNodes << " , edges: " << graphEdges << "\n";
 	cout << "---------------------------\n";
-	*/
 	
+	OcclusionGraph::TraverseOcclusions();
+
 
 	//render loop//
 	while (!glfwWindowShouldClose(myWindow))
@@ -184,7 +248,7 @@ int main()
 		glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0); 
 		glEnableVertexAttribArray(1);
-		glUniformMatrix4fv(glGetUniformLocation(PntRdr.GetHandle(), "pvm_matrix"), 1, GL_FALSE, glm::value_ptr(PVMMat));
+		glUniformMatrix4fv(glGetUniformLocation(PntRdr.GetHandle(), "pvm_matrix"), 1, GL_FALSE, glm::value_ptr(pvmMat));
 		glDrawArrays(GL_POINTS, 0, pnum);
 		
 
@@ -195,3 +259,75 @@ int main()
 
 	return 1;
 }
+
+void OcclusionGraph::TraverseOcclusions()
+{
+	for (int i = 0; i < objectsnum; i++)
+	//for (int i = 0; i < MaxObject; i++)
+	{
+		for (OcclusionStruct s : Occludees[i])
+			cout << RealIDs[i] << " occludes " << RealIDs[s.object] << "\n";
+
+	}
+}
+
+void OcclusionGraph::BuildGraph(DDS* dds)
+{
+
+	dds->GetOcclusions(); //use DDS to get occlusion data
+
+	unsigned long long* occpairHost = new unsigned long long[dds->OcclusionsNum];
+	cudaMemcpy(occpairHost, dds->occpairCompact, dds->OcclusionsNum * sizeof(unsigned long long), cudaMemcpyDeviceToHost);
+	int* occpairCountHost = new int[dds->OcclusionsNum];
+	cudaMemcpy(occpairCountHost, dds->occpairCompactCount, dds->OcclusionsNum * sizeof(int), cudaMemcpyDeviceToHost);
+
+	Occludees.resize(objectsnum);
+	OccludedBy.resize(objectsnum);
+
+	for (int i = 0; i < dds->OcclusionsNum; i++)
+	{
+
+		unsigned long long ull = occpairHost[i];
+		unsigned long long ullcopy = ull;
+
+		ullcopy = ullcopy >> 32;
+		int occluder = ullcopy;
+
+		ullcopy = ull & 0x00000000FFFFFFFF;
+		int occludee = ullcopy;
+
+		occluder = OrderedIDs[occluder];
+		occludee = OrderedIDs[occludee];
+
+		int occCount = occpairCountHost[i];
+
+		if (occluder >= objectsnum || occluder < 0 || occludee >= objectsnum || occludee < 0)
+			cout << "pbm in values: " << occluder << " " << occludee << "\n";
+		//;
+		else
+		{
+			OcclusionStruct s1 = { occludee, occCount };
+			OcclusionStruct s2 = { occluder, occCount };
+
+			Occludees[occluder].push_back(s1);
+			OccludedBy[occludee].push_back(s2);
+
+			//cout << "occlusion values: " << occluder << " " << occludee << "\n";
+		}
+	}
+
+}
+
+set<int> OcclusionGraph::GetOccluders(int object)
+{
+	set<int> occluders;
+
+	for (OcclusionStruct s : OccludedBy[object])
+		occluders.insert(s.object);
+
+	return occluders;
+}
+
+
+vector<vector<OcclusionStruct>> OcclusionGraph::Occludees;
+vector<vector<OcclusionStruct>> OcclusionGraph::OccludedBy;
