@@ -5,9 +5,10 @@ set (CMAKE_CXX_STANDARD 14)
 
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-#### detect operating system ####
-#set(SYSTEM "Unix")
-#set(SYS "${SYSTEM}${ARCH}")
+include_directories(external/glew-1.10.0/include/)
+include_directories(external/glfw/include/)
+include_directories(external/)
+include_directories(external/glm/)
 
 #### use cuda ####
 if(WIN32)
@@ -35,7 +36,9 @@ link_directories($ENV{CUDA_LIBRARY_DIRECTORY})
 ADD_EXECUTABLE(
 proj src/main.cpp
 src/Shader.cpp
-src/cudafile.cu
+src/DDS.cpp
+src/DDS.cu
+src/DDS.h
 )
 
 target_link_libraries(proj ${GLFW_STATIC_LIBRARIES} GLEW GLU GL ${GLEW_LIBRARIES} )

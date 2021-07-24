@@ -6,10 +6,7 @@
 //t:patch
 
 #include <GL/glew.h>
-//#include <GL/freeglut.h>
-#include "glm/glm.hpp"
-//#include "Shader.h"
-//#include "Renderer.h"
+#include <glm/glm.hpp>
 #include <thrust/host_vector.h>
 
 #include <vector>

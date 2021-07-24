@@ -2,11 +2,12 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include "../external/glew-1.10.0/include/GL/glew.h"
-#include "../external/glfw/include/GLFW/glfw3.h"
-#include "../external/glm/glm.hpp"
-#include "../external/glm/gtx/transform.hpp"
-#include "../external/glm/gtc/type_ptr.hpp"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 
 #include "Shader.h"
 
