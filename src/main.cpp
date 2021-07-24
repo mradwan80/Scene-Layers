@@ -1,3 +1,5 @@
+#include "main.h"
+#include "Shader.h"
 
 #include <iostream>
 #include <fstream>
@@ -8,22 +10,9 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-
-#include "Shader.h"
-
 #include<thrust/host_vector.h>
 #include<thrust/device_vector.h>
 #include<thrust/device_ptr.h>
-
-struct Position
-{
-	float x,y,z;
-};
-
-struct Color
-{
-	float r,g,b;
-};
 
 int main()
 {
@@ -58,8 +47,8 @@ int main()
 		exit(EXIT_FAILURE);
 	}
 
-	vector<Position> Positions;
-	vector<Color> Colors;
+	vector<pointCoords> Coords;
+	vector<pointColor> Colors;
 	vector<int>ObjectIds;
 
 	//read data from file//
@@ -76,12 +65,12 @@ int main()
 	{
 		inputfile>>x>>y>>z>>r>>g>>b>>o;
 		
-		//Positions.push_back(Position(x,y,z));
-		Position p; p.x=x;p.y=y;p.z=z;
-		Positions.push_back(p);
+		//Coords.push_back(pointCoords(x,y,z));
+		pointCoords p; p.x=x;p.y=y;p.z=z;
+		Coords.push_back(p);
 
-		//Colors.push_back(Color(r,g,b));
-		Color c;c.r=r;c.g=g;c.b=b;
+		//Colors.push_back(pointColor(r,g,b));
+		pointColor c;c.r=r;c.g=g;c.b=b;
 		Colors.push_back(c);
 		
 		ObjectIds.push_back(int(o));
@@ -93,7 +82,7 @@ int main()
 		if(y>maxy)	maxy=y;
 		if(z>maxz)	maxz=z;
 	}
-	int pnum=Positions.size();	//points number//
+	int pnum=Coords.size();	//points number//
 	float midx=(minx+maxx)/2;
 	float midy=(miny+maxy)/2;
 	float midz=(minz+maxz)/2;
@@ -106,7 +95,7 @@ int main()
 	glGenBuffers(3, &vbo[0]); 
 	glBindVertexArray(vao); 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-	glBufferData(GL_ARRAY_BUFFER, pnum * 3 * sizeof(GLfloat), &Positions[0], GL_DYNAMIC_DRAW_ARB);
+	glBufferData(GL_ARRAY_BUFFER, pnum * 3 * sizeof(GLfloat), &Coords[0], GL_DYNAMIC_DRAW_ARB);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glBufferData(GL_ARRAY_BUFFER, pnum * 3 * sizeof(GLfloat), &Colors[0], GL_DYNAMIC_DRAW_ARB);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
@@ -132,6 +121,53 @@ int main()
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	glViewport(0, 0, GlobalW, GlobalH);
 	glEnable(GL_DEPTH_TEST);
+
+	
+
+	////////////
+	//DDS//
+	////////////
+	/*cout << "start DDS\n";
+	
+	DDS* dds = new DDS(AVG, true, GlobalW, GlobalH, ViewWidth, &coords, &rads, &oid, ProjectionMat, vmMat, pvmMat, pvmMat);
+	dds->BuildDDS();
+	cout << "DDS finished\n";
+	auto graphstart = now();
+	OcclusionGraph::BuildGraph(dds);
+	auto graphend = now();
+
+	//OcclusionGraph::TraversOcclusions();
+
+	dds->FreeMemory(true);
+	
+	dds->OutputTimings(); 
+	
+	cout << "graph constructed in " << graphend - graphstart << "\n";
+
+
+	vector<bool>IsGraphNode(objectsnum, false);
+	int graphNodes = 0;
+	int graphEdges = 0;
+	for (int i = 0; i < objectsnum; i++)
+	{
+		graphEdges += OcclusionGraph::Occludees[i].size();
+		for (OcclusionStruct s : OcclusionGraph::Occludees[i])
+		{
+			IsGraphNode[i] = true;
+			IsGraphNode[s.object] = true;
+		}
+			
+	}
+	
+	for (int i = 0; i < objectsnum; i++)
+	{
+		if (IsGraphNode[i])
+			graphNodes++;
+	}
+	cout << "nodes: " << graphNodes << " , edges: " << graphEdges << "\n";
+	cout << "---------------------------\n";
+	*/
+	
 
 	//render loop//
 	while (!glfwWindowShouldClose(myWindow))

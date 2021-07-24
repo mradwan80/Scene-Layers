@@ -34,7 +34,9 @@ include_directories($ENV{CUDA_INCLUDE_DIRECTORY})
 link_directories($ENV{CUDA_LIBRARY_DIRECTORY})
 
 ADD_EXECUTABLE(
-proj src/main.cpp
+proj 
+src/main.h
+src/main.cpp
 src/Shader.cpp
 src/DDS.cpp
 src/DDS.cu

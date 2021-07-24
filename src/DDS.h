@@ -5,6 +5,8 @@
 //f:frag
 //t:patch
 
+#include "main.h"
+
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <thrust/host_vector.h>
@@ -12,22 +14,6 @@
 #include <vector>
 using namespace std;
 
-enum PileSampleType {AVG, START};
-
-struct pointCoords
-{
-	float x, y, z;
-};
-
-struct pointNormal
-{
-	float x, y, z;
-};
-
-struct pointColor
-{
-	float r, g, b;
-};
 
 class PileStruct
 {
