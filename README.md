@@ -29,7 +29,7 @@ Then move to the directory of the project, and:
 * cd build
 * cmake ..
 * make
-* ./knn
+* ./layers
 
 
 The project was tested on WSL2 (Windows Subsystem for Linux 2), with the following specifications:
