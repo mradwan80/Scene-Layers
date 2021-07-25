@@ -6,7 +6,7 @@ set (CMAKE_CXX_STANDARD 14)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
 include_directories(external/glew-1.10.0/include/)
-include_directories(external/glfw/include/)
+#include_directories(external/glfw/include/)
 include_directories(external/)
 include_directories(external/glm/)
 

@@ -17,10 +17,16 @@
 #include<thrust/device_vector.h>
 #include<thrust/device_ptr.h>
 
+vector<float>Visible;
+vector<int>ObjectIds;
+
 int MaxObject;
 int objectsnum;
 vector<int>OrderedIDs;
 vector<int>RealIDs;
+
+GLuint vao;
+vector<GLuint> vbo;
 
 struct OcclusionStruct
 {
@@ -32,11 +38,48 @@ class OcclusionGraph {
 public:
 	static vector<vector<OcclusionStruct>>Occludees;
 	static vector<vector<OcclusionStruct>>OccludedBy;
+	static int currentLayer;
+	static int LayersNum;
+	static vector<int>Layers;
 	static void TraverseOcclusions();
 	static void BuildGraph(DDS* dds);
 	static set<int> GetOccluders(int object);
+	static void CreateLayers();
+	static void UpdateVisibility(vector<float>& Visible,vector<int>& ObjectIds, GLuint vbo);
 };
 
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+
+	
+	if (action==GLFW_RELEASE)
+		return;
+
+	switch (key)
+	{
+		
+		case GLFW_KEY_ESCAPE:
+			if (action == GLFW_PRESS)
+				glfwSetWindowShouldClose(window, GLFW_TRUE);
+			break;
+		case GLFW_KEY_UP:
+			cout<<"ana up up up\n";
+			if(OcclusionGraph::currentLayer<OcclusionGraph::LayersNum)
+			{
+				OcclusionGraph::currentLayer++;
+				OcclusionGraph::UpdateVisibility(Visible,ObjectIds, vbo[2]);
+			}
+			break;
+
+		case GLFW_KEY_DOWN:
+			if(OcclusionGraph::currentLayer>0)
+			{
+				OcclusionGraph::currentLayer--;
+				OcclusionGraph::UpdateVisibility(Visible,ObjectIds, vbo[2]);
+			}
+			break;
+	}
+	
+}
 
 int main()
 {
@@ -62,7 +105,6 @@ int main()
 	glfwMakeContextCurrent(myWindow);
 	glfwSwapInterval(0);
 
-
 	glewExperimental = GL_TRUE;
 	GLenum err = glewInit();
 	if (GLEW_OK != err)
@@ -73,11 +115,9 @@ int main()
 
 	vector<pointCoords> Coords;
 	vector<pointColor> Colors;
-	vector<int>ObjectIds;
 	vector<float>Rads;	//constant for now//
-
+	
 	//read data from file//
-	//std::ifstream inputfile("../models/bunny.xyz", std::ios_base::in);
 	std::ifstream inputfile("../models/three_bunnies.xyz", std::ios_base::in);
 	float x,y,z,r,g,b,o;
 	float maxx=std::numeric_limits<float>::lowest();
@@ -101,6 +141,9 @@ int main()
 		ObjectIds.push_back(int(o));
 
 		Rads.push_back(0.05);
+
+
+		Visible.push_back(1);
 
 		if(x<minx)	minx=x;
 		if(y<miny)	miny=y;
@@ -158,17 +201,18 @@ int main()
 
 
 	//vao and vbos//
-	GLuint vao;
-	vector<GLuint> vbo(3);
+	vbo.resize(4);
 	glGenVertexArrays(1, &vao); 
-	glGenBuffers(3, &vbo[0]); 
+	glGenBuffers(4, &vbo[0]); 
 	glBindVertexArray(vao); 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferData(GL_ARRAY_BUFFER, pnum * 3 * sizeof(GLfloat), &Coords[0], GL_DYNAMIC_DRAW_ARB);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glBufferData(GL_ARRAY_BUFFER, pnum * 3 * sizeof(GLfloat), &Colors[0], GL_DYNAMIC_DRAW_ARB);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
-	glBufferData(GL_ARRAY_BUFFER, pnum * 1 * sizeof(GLint), &ObjectIds[0], GL_DYNAMIC_DRAW_ARB);
+	glBufferData(GL_ARRAY_BUFFER, pnum * 1 * sizeof(GLfloat), &Visible[0], GL_DYNAMIC_DRAW_ARB);
+	//glBindBuffer(GL_ARRAY_BUFFER, vbo[3]);
+	//glBufferData(GL_ARRAY_BUFFER, pnum * 1 * sizeof(GLint), &ObjectIds[0], GL_DYNAMIC_DRAW_ARB);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
@@ -232,6 +276,20 @@ int main()
 	
 	OcclusionGraph::TraverseOcclusions();
 
+	/*GLFWwindow* myWindow = glfwCreateWindow(GlobalW, GlobalH, "DDS-Layers", NULL, NULL);
+	if (!myWindow)
+	{
+		std::cout << "failed to create GLFW Window" << std::endl;
+		glfwTerminate();
+		exit(EXIT_FAILURE);
+	}
+	glfwMakeContextCurrent(myWindow);
+	glfwSwapInterval(0);*/
+	
+	OcclusionGraph::currentLayer=0;
+	glfwSetKeyCallback(myWindow, key_callback);
+
+	OcclusionGraph::CreateLayers();
 
 	//render loop//
 	while (!glfwWindowShouldClose(myWindow))
@@ -248,6 +306,9 @@ int main()
 		glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0); 
 		glEnableVertexAttribArray(1);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo[2]);
+		glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 0, 0); 
+		glEnableVertexAttribArray(2);
 		glUniformMatrix4fv(glGetUniformLocation(PntRdr.GetHandle(), "pvm_matrix"), 1, GL_FALSE, glm::value_ptr(pvmMat));
 		glDrawArrays(GL_POINTS, 0, pnum);
 		
@@ -303,7 +364,6 @@ void OcclusionGraph::BuildGraph(DDS* dds)
 
 		if (occluder >= objectsnum || occluder < 0 || occludee >= objectsnum || occludee < 0)
 			cout << "pbm in values: " << occluder << " " << occludee << "\n";
-		//;
 		else
 		{
 			OcclusionStruct s1 = { occludee, occCount };
@@ -312,7 +372,6 @@ void OcclusionGraph::BuildGraph(DDS* dds)
 			Occludees[occluder].push_back(s1);
 			OccludedBy[occludee].push_back(s2);
 
-			//cout << "occlusion values: " << occluder << " " << occludee << "\n";
 		}
 	}
 
@@ -328,6 +387,39 @@ set<int> OcclusionGraph::GetOccluders(int object)
 	return occluders;
 }
 
+void OcclusionGraph::CreateLayers()
+{
+	set<int> s;
+	
+	Layers.resize(objectsnum);
+
+	Layers[0]=0;
+	Layers[1]=1;
+	Layers[2]=2;
+
+	LayersNum=3;
+
+}
+
+void OcclusionGraph::UpdateVisibility(vector<float>& Visible,vector<int>& ObjectIds, GLuint vbo)
+{
+
+	int pnum=Visible.size();
+	for(int i=0;i<pnum;i++)
+	{
+		if(Layers[ObjectIds[i]]>=currentLayer)
+			Visible[i]=1;
+		else
+			Visible[i]=0;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, pnum * 1 * sizeof(GLfloat), &Visible[0], GL_DYNAMIC_DRAW_ARB);
+
+}
 
 vector<vector<OcclusionStruct>> OcclusionGraph::Occludees;
 vector<vector<OcclusionStruct>> OcclusionGraph::OccludedBy;
+vector<int> OcclusionGraph::Layers;
+int OcclusionGraph::currentLayer=0;
+int OcclusionGraph::LayersNum;
