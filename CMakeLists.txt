@@ -43,6 +43,12 @@ src/Shader.cpp
 src/DDS.cpp
 src/DDS.cu
 src/DDS.h
+src/browser.h
+src/browser.cpp
+src/OcclusionGraph.h
+src/OcclusionGraph.cpp
+src/VisibilityUpdater.h
+src/VisibilityUpdater.cpp
 )
 
 target_link_libraries(layers ${GLFW_STATIC_LIBRARIES} GLEW GLU GL ${GLEW_LIBRARIES} )

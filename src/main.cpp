@@ -17,50 +17,14 @@
 #include<thrust/device_vector.h>
 #include<thrust/device_ptr.h>
 
-vector<float>Visible;
-vector<int>ObjectIds;
-
-int MaxObject;
-int objectsnum;
-vector<int>OrderedIDs;
-vector<int>RealIDs;
-
-GLuint vao;
-vector<GLuint> vbo;
-
-struct OcclusionStruct
-{
-	int object;
-	int count;
-};
-
-class OcclusionGraph {
-
-private:
-	static vector<vector<OcclusionStruct>>Occludees;
-	static vector<vector<OcclusionStruct>>OccludedBy;
-
-public:
-	
-	static void TraverseOcclusions();
-	static void BuildGraph(DDS* dds);
-	static set<int> GetOccluders(int object);
-	
-};
-
-class Browser{
-
-	static int currentLayer;
-	static int LayersNum;
-	static vector<int>Layers;
-public:
-	static void CreateLayers();
-	static bool incrementLayer();
-	static bool decrementLayer();
-	static void UpdateVisibility(vector<float>& Visible,vector<int>& ObjectIds, GLuint vbo);
-};
+#include "OcclusionGraph.h"
+#include "Browser.h"
+#include "VisibilityUpdater.h"
 
 
+Browser* browser;
+OcclusionGraph* graph;
+VisibilityUpdater* vadapter;
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
@@ -76,13 +40,13 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 				glfwSetWindowShouldClose(window, GLFW_TRUE);
 			break;
 		case GLFW_KEY_UP:
-			if(Browser::incrementLayer())
-				Browser::UpdateVisibility(Visible,ObjectIds, vbo[2]);
+			if(browser->incrementLayer())
+				vadapter->UpdateVisibility(browser);
 			break;
 
 		case GLFW_KEY_DOWN:
-			if(Browser::decrementLayer())
-				Browser::UpdateVisibility(Visible,ObjectIds, vbo[2]);
+			if(browser->decrementLayer())
+				vadapter->UpdateVisibility(browser);
 			break;
 	}
 	
@@ -91,7 +55,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 int main()
 {
 	int GlobalW=1024;
-	int GlobalH=768;
+	int GlobalH=800;
 
 	if (!glfwInit())
 	{
@@ -123,6 +87,8 @@ int main()
 	vector<pointCoords> Coords;
 	vector<pointColor> Colors;
 	vector<float>Rads;	//constant for now//
+	vector<int>ObjectIds;
+	vector<float>Visible;
 	
 	//read data from file//
 	std::ifstream inputfile("../models/three_bunnies.xyz", std::ios_base::in);
@@ -167,47 +133,11 @@ int main()
 
 	//find number of objects//
 	std::vector<int>::iterator maxobject = std::max_element(ObjectIds.begin(), ObjectIds.end());
-	vector<bool>IsAnObjectID (maxobject[0] + 1, false);
-	for (int i = 0; i < pnum; i++)
-	{
-		IsAnObjectID[ObjectIds[i]] = true;
-	}
-	objectsnum = 0;
-	for (int i = 0; i < IsAnObjectID.size(); i++)
-	{
-		if (IsAnObjectID[i])
-			objectsnum++;
-	}
-	MaxObject = maxobject[0];
-	cout << "max: " << MaxObject << "\n";
-	cout << "number of objects: " << objectsnum << "\n";
-	////
-	OrderedIDs.resize(MaxObject + 1);
-	int index = 0;
-	for (int i = 0; i < IsAnObjectID.size(); i++)
-	{
-		if (IsAnObjectID[i])
-		{
-			OrderedIDs[i] = index;
-			index++;
-		}
-		else
-			OrderedIDs[i] = -1;
-	}
-
-	RealIDs.resize(objectsnum);
-	index = 0;
-	for (int i = 0; i < IsAnObjectID.size(); i++)
-	{
-		if (IsAnObjectID[i])
-		{
-			RealIDs[index] = i;
-			index++;
-		}
-	}
-
+	int objectsnum=maxobject[0]+1; // assuming all IDs between 0 and maxobject are used//
 
 	//vao and vbos//
+	GLuint vao;
+	vector<GLuint> vbo;
 	vbo.resize(4);
 	glGenVertexArrays(1, &vao); 
 	glGenBuffers(4, &vbo[0]); 
@@ -222,6 +152,8 @@ int main()
 	//glBufferData(GL_ARRAY_BUFFER, pnum * 1 * sizeof(GLint), &ObjectIds[0], GL_DYNAMIC_DRAW_ARB);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+
+	vadapter = new VisibilityUpdater(pnum, vao, vbo[2], &ObjectIds);
 
 	//matrices//
 	glm::mat4 ModelMat = glm::translate(glm::vec3(0,0,0));
@@ -255,27 +187,23 @@ int main()
 	dds->BuildDDS();
 	cout << "DDS finished\n";
 
-	OcclusionGraph::BuildGraph(dds);
+	////////////
+	////////////
+	////////////
+
+	graph=new OcclusionGraph();
+	graph->BuildGraph(dds, objectsnum);
 
 	dds->FreeMemory(true);
 	
 	cout << "---------------------------\n";
 	
-	OcclusionGraph::TraverseOcclusions();
+	graph->TraverseOcclusions();
 
-	/*GLFWwindow* myWindow = glfwCreateWindow(GlobalW, GlobalH, "DDS-Layers", NULL, NULL);
-	if (!myWindow)
-	{
-		std::cout << "failed to create GLFW Window" << std::endl;
-		glfwTerminate();
-		exit(EXIT_FAILURE);
-	}
-	glfwMakeContextCurrent(myWindow);
-	glfwSwapInterval(0);*/
-	
 	glfwSetKeyCallback(myWindow, key_callback);
 
-	Browser::CreateLayers();
+	browser = new Browser();
+	browser->CreateLayers(objectsnum);
 
 	//render loop//
 	while (!glfwWindowShouldClose(myWindow))
@@ -306,128 +234,3 @@ int main()
 
 	return 1;
 }
-
-void OcclusionGraph::TraverseOcclusions()
-{
-	for (int i = 0; i < objectsnum; i++)
-	//for (int i = 0; i < MaxObject; i++)
-	{
-		for (OcclusionStruct s : Occludees[i])
-			cout << RealIDs[i] << " occludes " << RealIDs[s.object] << "\n";
-
-	}
-}
-
-void OcclusionGraph::BuildGraph(DDS* dds)
-{
-
-	dds->GetOcclusions(); //use DDS to get occlusion data
-
-	unsigned long long* occpairHost = new unsigned long long[dds->OcclusionsNum];
-	cudaMemcpy(occpairHost, dds->occpairCompact, dds->OcclusionsNum * sizeof(unsigned long long), cudaMemcpyDeviceToHost);
-	int* occpairCountHost = new int[dds->OcclusionsNum];
-	cudaMemcpy(occpairCountHost, dds->occpairCompactCount, dds->OcclusionsNum * sizeof(int), cudaMemcpyDeviceToHost);
-
-	Occludees.resize(objectsnum);
-	OccludedBy.resize(objectsnum);
-
-	for (int i = 0; i < dds->OcclusionsNum; i++)
-	{
-
-		unsigned long long ull = occpairHost[i];
-		unsigned long long ullcopy = ull;
-
-		ullcopy = ullcopy >> 32;
-		int occluder = ullcopy;
-
-		ullcopy = ull & 0x00000000FFFFFFFF;
-		int occludee = ullcopy;
-
-		occluder = OrderedIDs[occluder];
-		occludee = OrderedIDs[occludee];
-
-		int occCount = occpairCountHost[i];
-
-		if (occluder >= objectsnum || occluder < 0 || occludee >= objectsnum || occludee < 0)
-			cout << "pbm in values: " << occluder << " " << occludee << "\n";
-		else
-		{
-			OcclusionStruct s1 = { occludee, occCount };
-			OcclusionStruct s2 = { occluder, occCount };
-
-			Occludees[occluder].push_back(s1);
-			OccludedBy[occludee].push_back(s2);
-
-		}
-	}
-
-}
-
-set<int> OcclusionGraph::GetOccluders(int object)
-{
-	set<int> occluders;
-
-	for (OcclusionStruct s : OccludedBy[object])
-		occluders.insert(s.object);
-
-	return occluders;
-}
-
-void Browser::CreateLayers()
-{
-	set<int> s;
-	
-	Layers.resize(objectsnum);
-
-	Layers[0]=0;
-	Layers[1]=1;
-	Layers[2]=2;
-
-	LayersNum=3;
-
-}
-
-void Browser::UpdateVisibility(vector<float>& Visible,vector<int>& ObjectIds, GLuint vbo)
-{
-
-	int pnum=Visible.size();
-	for(int i=0;i<pnum;i++)
-	{
-		if(Layers[ObjectIds[i]]>=currentLayer)
-			Visible[i]=1;
-		else
-			Visible[i]=0;
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, pnum * 1 * sizeof(GLfloat), &Visible[0], GL_DYNAMIC_DRAW_ARB);
-
-}
-
-bool Browser::incrementLayer()
-{
-	if(currentLayer<LayersNum)
-	{
-		currentLayer++;
-		return true;
-	}
-	else
-		return false;
-}
-
-bool Browser::decrementLayer()
-{
-	if(currentLayer>0)
-	{
-		currentLayer--;
-		return true;
-	}
-	else
-		return false;
-}
-
-vector<vector<OcclusionStruct>> OcclusionGraph::Occludees;
-vector<vector<OcclusionStruct>> OcclusionGraph::OccludedBy;
-vector<int> Browser::Layers;
-int Browser::currentLayer=0;
-int Browser::LayersNum;
