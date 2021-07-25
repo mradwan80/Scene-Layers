@@ -4,6 +4,7 @@ This program implements an interactive interface to explore a scene represented 
 
 In short, the DDS extends the cells of a view aligned 2D grid to depth piles. Points are mapped to the piles of the corresponding cells, and sorted by depth. A link to a journal paper describing the structure will be provided soon.
 
+The input scene should be segmented, such that each point has an additional field storing the object ID. Also, the scene is static at the moment. Navigation features will be added soon.
 
 The program is cross platform (Windows and Linux).
 
