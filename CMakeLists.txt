@@ -1,14 +1,16 @@
 cmake_minimum_required(VERSION 2.8)
-project(proj LANGUAGES CXX CUDA)
+project(layers LANGUAGES CXX CUDA)
 
 set (CMAKE_CXX_STANDARD 14)
 
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-include_directories(external/glew-1.10.0/include/)
-#include_directories(external/glfw/include/)
-include_directories(external/)
-include_directories(external/glm/)
+include_directories(external/)  #for glm
+
+if(WIN32)
+    include_directories(external/glew-1.10.0/include/)
+    include_directories(external/glfw/include/)
+endif()
 
 #### use cuda ####
 if(WIN32)
@@ -34,7 +36,7 @@ include_directories($ENV{CUDA_INCLUDE_DIRECTORY})
 link_directories($ENV{CUDA_LIBRARY_DIRECTORY})
 
 ADD_EXECUTABLE(
-proj 
+layers 
 src/main.h
 src/main.cpp
 src/Shader.cpp
@@ -43,4 +45,4 @@ src/DDS.cu
 src/DDS.h
 )
 
-target_link_libraries(proj ${GLFW_STATIC_LIBRARIES} GLEW GLU GL ${GLEW_LIBRARIES} )
+target_link_libraries(layers ${GLFW_STATIC_LIBRARIES} GLEW GLU GL ${GLEW_LIBRARIES} )
