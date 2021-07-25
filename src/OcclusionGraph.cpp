@@ -1,6 +1,6 @@
 #include "OcclusionGraph.h"
 
-OcclusionGraph::OcclusionGraph(){}
+OcclusionGraph *OcclusionGraph::instance = 0;
 
 void OcclusionGraph::TraverseOcclusions()
 {
@@ -62,4 +62,11 @@ set<int> OcclusionGraph::GetOccluders(int object)
 		occluders.insert(s.object);
 
 	return occluders;
+}
+
+OcclusionGraph* OcclusionGraph::getInstance() 
+{
+      if (!instance)
+      instance = new OcclusionGraph;
+      return instance;
 }

@@ -13,11 +13,15 @@ struct OcclusionStruct
 class OcclusionGraph {
 
 private:
+    static OcclusionGraph *instance;
+
 	vector<vector<OcclusionStruct>>Occludees;
 	vector<vector<OcclusionStruct>>OccludedBy;
 
 public:
-	OcclusionGraph();
+    static OcclusionGraph *getInstance();
+    
+	//OcclusionGraph();
 	void TraverseOcclusions();
 	void BuildGraph(DDS* dds, int objectsnum);
 	set<int> GetOccluders(int object);

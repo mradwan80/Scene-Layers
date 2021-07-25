@@ -1,5 +1,7 @@
 #include "Browser.h"
 
+Browser *Browser::instance = 0;
+
 Browser::Browser():currentLayer(0){}
 
 void Browser::CreateLayers(int objectsnum)
@@ -44,4 +46,11 @@ int Browser::GetCurrentLayer()
 int Browser::GetObjectLayer(int obj)
 {
 	return Layers[obj];
+}
+
+Browser* Browser::getInstance() 
+{
+      if (!instance)
+        instance = new Browser;
+      return instance;
 }

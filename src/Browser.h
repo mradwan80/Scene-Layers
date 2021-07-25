@@ -5,11 +5,17 @@ using namespace std;
 
 class Browser{
 
+    static Browser *instance;
+
 	int currentLayer;
 	int LayersNum;
 	vector<int>Layers;
+    Browser();
+
 public:
-	Browser();
+    
+    static Browser *getInstance();
+	
 	void CreateLayers(int objectsnum);
 	bool incrementLayer();
 	bool decrementLayer();

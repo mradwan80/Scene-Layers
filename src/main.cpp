@@ -153,7 +153,7 @@ int main()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	vadapter = new VisibilityUpdater(pnum, vao, vbo[2], &ObjectIds);
+	vadapter = VisibilityUpdater::getInstance(pnum, vao, vbo[2], &ObjectIds);
 
 	//matrices//
 	glm::mat4 ModelMat = glm::translate(glm::vec3(0,0,0));
@@ -191,7 +191,8 @@ int main()
 	////////////
 	////////////
 
-	graph=new OcclusionGraph();
+	graph = OcclusionGraph::getInstance();
+
 	graph->BuildGraph(dds, objectsnum);
 
 	dds->FreeMemory(true);
@@ -202,7 +203,7 @@ int main()
 
 	glfwSetKeyCallback(myWindow, key_callback);
 
-	browser = new Browser();
+	browser = Browser::getInstance();
 	browser->CreateLayers(objectsnum);
 
 	//render loop//

@@ -1,6 +1,7 @@
 #include "VisibilityUpdater.h"
 
-VisibilityUpdater::VisibilityUpdater(){}
+VisibilityUpdater *VisibilityUpdater::instance = 0;
+
 VisibilityUpdater::VisibilityUpdater(int num, GLuint va, GLuint vb, vector<int>*oids)
 {
 	vao=va;
@@ -29,4 +30,11 @@ void VisibilityUpdater::UpdateVisibility(Browser* browser)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
+}
+
+VisibilityUpdater* VisibilityUpdater::getInstance(int num, GLuint va, GLuint vb, vector<int>*oids) 
+{
+    if (!instance)
+        instance = new VisibilityUpdater(num, va, vb, oids);
+    return instance;
 }
