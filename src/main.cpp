@@ -35,18 +35,32 @@ struct OcclusionStruct
 };
 
 class OcclusionGraph {
-public:
+
+private:
 	static vector<vector<OcclusionStruct>>Occludees;
 	static vector<vector<OcclusionStruct>>OccludedBy;
-	static int currentLayer;
-	static int LayersNum;
-	static vector<int>Layers;
+
+public:
+	
 	static void TraverseOcclusions();
 	static void BuildGraph(DDS* dds);
 	static set<int> GetOccluders(int object);
+	
+};
+
+class Browser{
+
+	static int currentLayer;
+	static int LayersNum;
+	static vector<int>Layers;
+public:
 	static void CreateLayers();
+	static bool incrementLayer();
+	static bool decrementLayer();
 	static void UpdateVisibility(vector<float>& Visible,vector<int>& ObjectIds, GLuint vbo);
 };
+
+
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 
@@ -62,20 +76,13 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 				glfwSetWindowShouldClose(window, GLFW_TRUE);
 			break;
 		case GLFW_KEY_UP:
-			cout<<"ana up up up\n";
-			if(OcclusionGraph::currentLayer<OcclusionGraph::LayersNum)
-			{
-				OcclusionGraph::currentLayer++;
-				OcclusionGraph::UpdateVisibility(Visible,ObjectIds, vbo[2]);
-			}
+			if(Browser::incrementLayer())
+				Browser::UpdateVisibility(Visible,ObjectIds, vbo[2]);
 			break;
 
 		case GLFW_KEY_DOWN:
-			if(OcclusionGraph::currentLayer>0)
-			{
-				OcclusionGraph::currentLayer--;
-				OcclusionGraph::UpdateVisibility(Visible,ObjectIds, vbo[2]);
-			}
+			if(Browser::decrementLayer())
+				Browser::UpdateVisibility(Visible,ObjectIds, vbo[2]);
 			break;
 	}
 	
@@ -83,8 +90,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 int main()
 {
-	int GlobalW=800;
-	int GlobalH=600;
+	int GlobalW=1024;
+	int GlobalH=768;
 
 	if (!glfwInit())
 	{
@@ -252,26 +259,6 @@ int main()
 
 	dds->FreeMemory(true);
 	
-	vector<bool>IsGraphNode(objectsnum, false);
-	int graphNodes = 0;
-	int graphEdges = 0;
-	for (int i = 0; i < objectsnum; i++)
-	{
-		graphEdges += OcclusionGraph::Occludees[i].size();
-		for (OcclusionStruct s : OcclusionGraph::Occludees[i])
-		{
-			IsGraphNode[i] = true;
-			IsGraphNode[s.object] = true;
-		}
-			
-	}
-	
-	for (int i = 0; i < objectsnum; i++)
-	{
-		if (IsGraphNode[i])
-			graphNodes++;
-	}
-	cout << "nodes: " << graphNodes << " , edges: " << graphEdges << "\n";
 	cout << "---------------------------\n";
 	
 	OcclusionGraph::TraverseOcclusions();
@@ -286,10 +273,9 @@ int main()
 	glfwMakeContextCurrent(myWindow);
 	glfwSwapInterval(0);*/
 	
-	OcclusionGraph::currentLayer=0;
 	glfwSetKeyCallback(myWindow, key_callback);
 
-	OcclusionGraph::CreateLayers();
+	Browser::CreateLayers();
 
 	//render loop//
 	while (!glfwWindowShouldClose(myWindow))
@@ -387,7 +373,7 @@ set<int> OcclusionGraph::GetOccluders(int object)
 	return occluders;
 }
 
-void OcclusionGraph::CreateLayers()
+void Browser::CreateLayers()
 {
 	set<int> s;
 	
@@ -401,7 +387,7 @@ void OcclusionGraph::CreateLayers()
 
 }
 
-void OcclusionGraph::UpdateVisibility(vector<float>& Visible,vector<int>& ObjectIds, GLuint vbo)
+void Browser::UpdateVisibility(vector<float>& Visible,vector<int>& ObjectIds, GLuint vbo)
 {
 
 	int pnum=Visible.size();
@@ -418,8 +404,30 @@ void OcclusionGraph::UpdateVisibility(vector<float>& Visible,vector<int>& Object
 
 }
 
+bool Browser::incrementLayer()
+{
+	if(currentLayer<LayersNum)
+	{
+		currentLayer++;
+		return true;
+	}
+	else
+		return false;
+}
+
+bool Browser::decrementLayer()
+{
+	if(currentLayer>0)
+	{
+		currentLayer--;
+		return true;
+	}
+	else
+		return false;
+}
+
 vector<vector<OcclusionStruct>> OcclusionGraph::Occludees;
 vector<vector<OcclusionStruct>> OcclusionGraph::OccludedBy;
-vector<int> OcclusionGraph::Layers;
-int OcclusionGraph::currentLayer=0;
-int OcclusionGraph::LayersNum;
+vector<int> Browser::Layers;
+int Browser::currentLayer=0;
+int Browser::LayersNum;
