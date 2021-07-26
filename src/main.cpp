@@ -91,7 +91,8 @@ int main()
 	vector<float>Visible;
 	
 	//read data from file//
-	std::ifstream inputfile("../models/three_bunnies.xyz", std::ios_base::in);
+	//std::ifstream inputfile("../models/three_bunnies.xyz", std::ios_base::in);
+	std::ifstream inputfile("../models/conference-room.xyz", std::ios_base::in);
 	float x,y,z,r,g,b,o;
 	float maxx=std::numeric_limits<float>::lowest();
 	float maxy=std::numeric_limits<float>::lowest();
@@ -108,7 +109,7 @@ int main()
 		Coords.push_back(p);
 
 		//Colors.push_back(pointColor(r,g,b));
-		pointColor c;c.r=r;c.g=g;c.b=b;
+		pointColor c;c.r=r/255;c.g=g/255;c.b=b/255;
 		Colors.push_back(c);
 		
 		ObjectIds.push_back(int(o));
@@ -157,8 +158,8 @@ int main()
 
 	//matrices//
 	glm::mat4 ModelMat = glm::translate(glm::vec3(0,0,0));
-	//glm::mat4 ViewMat = glm::translate(glm::vec3(-midx,-midy,-(minz+2.5*(maxz-midz))));
-	glm::mat4 ViewMat = glm::translate(glm::vec3(-midx,-midy,-(minz+3*(maxz-midz))));
+	glm::mat4 ViewMat = glm::translate(glm::vec3(-midx,-midy,-(minz+1.95*(maxz-midz)))); //for conference room
+	//glm::mat4 ViewMat = glm::translate(glm::vec3(-midx,-midy,-(minz+3*(maxz-midz))));	//for 3 bunnies
 	float fov=70.0;
 	float Near = 0.01;
 	float Far = 7*(maxz-minz);
