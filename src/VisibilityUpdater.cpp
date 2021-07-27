@@ -39,3 +39,15 @@ VisibilityUpdater* VisibilityUpdater::getInstance(int num, GLuint va, GLuint vb,
         instance = new VisibilityUpdater(num, va, vb, oids);
     return instance;
 }
+
+/*VisibilityUpdater::~VisibilityUpdater() 
+{
+	if(instance==nullptr) return;
+	delete instance;
+	instance=nullptr;
+}*/
+
+void VisibilityUpdater::DestroyInstance() 
+{
+	delete instance;
+}

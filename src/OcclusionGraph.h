@@ -25,5 +25,7 @@ public:
 	void TraverseOcclusions();
 	void BuildGraph(DDS* dds, int objectsnum);
 	set<int> GetOccluders(int object);
+
+	void DestroyInstance();
 	
 };

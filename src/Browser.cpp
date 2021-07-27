@@ -117,3 +117,8 @@ Browser* Browser::getInstance()
         instance = new Browser;
       return instance;
 }
+
+void Browser::DestroyInstance()
+{
+	delete instance;
+}

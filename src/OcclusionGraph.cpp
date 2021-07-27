@@ -70,3 +70,8 @@ OcclusionGraph* OcclusionGraph::getInstance()
       instance = new OcclusionGraph;
       return instance;
 }
+
+void OcclusionGraph::DestroyInstance() 
+{
+	delete instance;
+}

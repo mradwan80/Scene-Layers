@@ -237,6 +237,13 @@ int main()
 		glfwPollEvents(); 
 	}
 
+	//delete dds;
+
+	browser->DestroyInstance();
+	graph->DestroyInstance();
+	vadapter->DestroyInstance();
+
+
 
 	return 1;
 }

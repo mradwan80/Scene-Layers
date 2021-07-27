@@ -22,4 +22,6 @@ public:
 	static VisibilityUpdater *getInstance(int num, GLuint va, GLuint vb, vector<int>*oids);
 
 	void UpdateVisibility(Browser* browser);
+
+	void DestroyInstance();
 };

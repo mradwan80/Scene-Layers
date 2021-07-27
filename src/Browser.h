@@ -23,5 +23,7 @@ public:
 	bool decrementLayer();
 	int GetCurrentLayer();
 	int GetObjectLayer(int obj);
+
+	void DestroyInstance();
 	
 };
