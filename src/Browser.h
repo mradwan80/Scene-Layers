@@ -1,5 +1,7 @@
 #pragma once
 
+#include "OcclusionGraph.h"
+
 #include <vector>
 using namespace std;
 
@@ -16,7 +18,7 @@ public:
     
     static Browser *getInstance();
 	
-	void CreateLayers(int objectsnum);
+	void CreateLayers(int objectsnum, OcclusionGraph* graph);
 	bool incrementLayer();
 	bool decrementLayer();
 	int GetCurrentLayer();

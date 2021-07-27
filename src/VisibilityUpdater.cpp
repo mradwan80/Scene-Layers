@@ -18,10 +18,11 @@ void VisibilityUpdater::UpdateVisibility(Browser* browser)
 
 	for(int i=0;i<pnum;i++)
 	{
-		if(browser->GetObjectLayer(ObjectIds->at(i)>=currentLayer))
+		if(browser->GetObjectLayer(ObjectIds->at(i))>=currentLayer)
 			Visible[i]=1;
 		else
 			Visible[i]=0;
+
 	}
 
 	glBindVertexArray(vao); 

@@ -1,3 +1,6 @@
+
+//in future will have explore and navigate modes
+
 #include "main.h"
 #include "Shader.h"
 #include "DDS.h"
@@ -135,6 +138,7 @@ int main()
 	//find number of objects//
 	std::vector<int>::iterator maxobject = std::max_element(ObjectIds.begin(), ObjectIds.end());
 	int objectsnum=maxobject[0]+1; // assuming all IDs between 0 and maxobject are used//
+	cout<<"objectsnum: " <<objectsnum<<"\n";
 
 	//vao and vbos//
 	GLuint vao;
@@ -182,7 +186,7 @@ int main()
 	////////////
 	//DDS//
 	////////////
-	cout << "start DDS\n";
+	cout << "DDS started\n";
 	
 	DDS* dds = new DDS(AVG, true, GlobalW, GlobalH, ViewWidth, &Coords, &Rads, &ObjectIds, ProjectionMat, vmMat, pvmMat, pvmMat);
 	dds->BuildDDS();
@@ -200,12 +204,12 @@ int main()
 	
 	cout << "---------------------------\n";
 	
-	graph->TraverseOcclusions();
+	//graph->TraverseOcclusions();
 
 	glfwSetKeyCallback(myWindow, key_callback);
 
 	browser = Browser::getInstance();
-	browser->CreateLayers(objectsnum);
+	browser->CreateLayers(objectsnum, graph);
 
 	//render loop//
 	while (!glfwWindowShouldClose(myWindow))
