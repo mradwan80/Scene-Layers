@@ -237,7 +237,7 @@ int main()
 		glfwPollEvents(); 
 	}
 
-	//delete dds;
+	delete dds;
 
 	browser->DestroyInstance();
 	graph->DestroyInstance();

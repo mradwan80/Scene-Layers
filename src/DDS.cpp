@@ -1048,6 +1048,8 @@ void DDS::BuildDDS()
 	
 }
 
+DDS::~DDS(){}
+
 void DDS::GetOcclusions()
 {
 	float milliseconds;

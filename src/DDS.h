@@ -128,7 +128,8 @@ public:
 
 	DDS();
 	DDS(PileSampleType SampleValue, bool Debug_Mode, int w, int h, float viewWidthI, vector<pointCoords>* Pos, vector<float>* Rad, vector<int>* Ptc, glm::mat4 projectionMatI, glm::mat4 vmMatI, glm::mat4 pvmMatI, glm::mat4 pvmOrthoMatI);
-	
+	~DDS();
+
 	void BuildDDS();
 	void FreeMemory(bool FreeGraphBuffer);
 
