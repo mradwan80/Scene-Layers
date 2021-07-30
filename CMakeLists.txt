@@ -43,8 +43,8 @@ src/Shader.cpp
 src/DDS.cpp
 src/DDS.cu
 src/DDS.h
-src/browser.h
-src/browser.cpp
+src/Browser.h
+src/Browser.cpp
 src/OcclusionGraph.h
 src/OcclusionGraph.cpp
 src/VisibilityUpdater.h
