@@ -2,7 +2,7 @@
 
 This program implements an interactive interface to explore a scene represented by a point cloud. The objects are arranged in visibility layers, and the user can browse through them. The surface is approximated, and the occlusion relations are determined, using the DDS (discrete depth structure) [1], which is built on the same concepts of the TLDI [2]. In short, the DDS extends the cells of a view aligned 2D grid to depth piles. Points are mapped to the piles of the corresponding cells, and sorted by depth.
 
-The input scene should be pre=segmented, such that each point has an additional field storing the object ID. Also, the scene is static at the moment. Navigation features will be added soon.
+The input scene should be pre-segmented, such that each point has an additional field storing the object ID. Also, the scene is static at the moment. Navigation features will be added soon.
 
 The model used is taken from the dataset available in [3]
 
