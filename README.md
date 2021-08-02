@@ -56,6 +56,9 @@ and also on WSL2 (Windows Subsystem for Linux 2), with the following specificati
 * GeForce GTX 950M
 * VcXsrv
 
+********************************************************************************
+
+## References
 
 [1] Fast occlusion-based point cloud exploration  (to appear in The Visual Computer Journal September 2021)
 
