@@ -61,8 +61,8 @@ and also on WSL2 (Windows Subsystem for Linux 2), with the following specificati
 ## References
 
 [1] Fast occlusion-based point cloud exploration  (to appear in The Visual Computer Journal September 2021)
+https://link.springer.com/article/10.1007/s00371-021-02243-x
 
 [2] Efficient collision detection while rendering dynamic point clouds (Proceedings of the 2014 Graphics Interface Conference, pages 25-33. May 2014.)
-https://link.springer.com/article/10.1007/s00371-021-02243-x
 
 [3] http://buildingparser.stanford.edu/dataset.html
